@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Control - Sistema de Alertas en Tiempo Real</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>🏛️ Centro de Control de Seguridad Industrial</h1>
+                    <p class="subtitle">Cuenca - Sistema de Monitoreo en Tiempo Real</p>
+                </div>
+                <div class="header-right">
+                    <div class="status-indicator">
+                        <span id="connection-status" class="status-dot disconnected"></span>
+                        <span id="connection-text">Desconectado</span>
+                    </div>
+                    <div class="client-info">
+                        <span id="client-id">ID: ---</span>
+                        <span id="clients-connected">Operadores: 0</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Principal -->
+        <main class="main-content">
+            <!-- Panel de Resumen -->
+            <section class="summary-panel">
+                <div class="summary-card critical">
+                    <div class="summary-icon">🔴</div>
+                    <div class="summary-info">
+                        <h3>Críticas</h3>
+                        <p id="count-critical" class="count">0</p>
+                    </div>
+                </div>
+                <div class="summary-card warning">
+                    <div class="summary-icon">🟡</div>
+                    <div class="summary-info">
+                        <h3>Advertencias</h3>
+                        <p id="count-warning" class="count">0</p>
+                    </div>
+                </div>
+                <div class="summary-card normal">
+                    <div class="summary-icon">🟢</div>
+                    <div class="summary-info">
+                        <h3>Normales</h3>
+                        <p id="count-normal" class="count">0</p>
+                    </div>
+                </div>
+                <div class="summary-card info">
+                    <div class="summary-icon">📊</div>
+                    <div class="summary-info">
+                        <h3>Total</h3>
+                        <p id="count-total" class="count">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel de Controles -->
+            <section class="controls-panel">
+                <button id="btn-clear" class="btn btn-secondary">🗑️ Limpiar Alertas</button>
+                <button id="btn-auto-scroll" class="btn btn-secondary active">📌 Auto-scroll</button>
+                <label class="filter-label">
+                    <span>Filtrar por nivel:</span>
+                    <select id="filter-level">
+                        <option value="">Todas</option>
+                        <option value="rojo">Críticas (Rojo)</option>
+                        <option value="amarillo">Advertencias (Amarillo)</option>
+                        <option value="verde">Normales (Verde)</option>
+                    </select>
+                </label>
+            </section>
+
+            <!-- Panel de Alertas en Tiempo Real -->
+            <section class="alerts-section">
+                <div class="alerts-header">
+                    <h2>📢 Alertas en Tiempo Real</h2>
+                    <span id="last-update" class="last-update">Última actualización: ---</span>
+                </div>
+                
+                <div class="alerts-container">
+                    <div id="alerts-list" class="alerts-list">
+                        <div class="empty-state">
+                            <span class="empty-icon">📭</span>
+                            <p>Esperando alertas...</p>
+                            <small>Las alertas aparecerán aquí en tiempo real</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Sistema WebSocket de Alertas | Centro de Control de Cuenca | 
+                <span id="current-time">--:--:--</span>
+            </p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
