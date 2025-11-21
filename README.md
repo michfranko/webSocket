@@ -1,132 +1,129 @@
+
 # Centro de Control - Cliente WebSocket
 
 ## 🎯 Objetivo
 
-Este es el **cliente (dashboard) WebSocket**. Recibe alertas en tiempo real desde el servidor WebSocket que tu compañero está ejecutando en Docker.
+Este repositorio contiene el **cliente (dashboard) WebSocket** que muestra alertas en tiempo real enviadas por un servidor WebSocket externo.
 
-**¡Muy simple!** Solo necesitas:
-1. La IP y puerto del servidor de tu compañero
-2. Ejecutar este cliente en Docker
-3. Abrir el dashboard en el navegador
+IMPORTANTE: Actualmente el cliente está configurado para conectarse de forma fija al servidor WebSocket en `ws://172.23.144.1:9000` (esto se estableció en `client/app.js`). Si necesitas conectar a otra IP/puerto, revisa la sección "Cambiar configuración de conexión".
 
 ---
 
-## 📁 Estructura
+## 📁 Estructura del proyecto
 
 ```
 webSocket/
 ├── client/                   # Dashboard (HTML/CSS/JS)
 │   ├── index.html           # UI
 │   ├── styles.css           # Estilos
-│   ├── app.js               # Lógica WebSocket
-│   ├── Dockerfile           # Imagen Docker
+│   ├── app.js               # Lógica WebSocket (conexión fija a 172.23.144.1:9000)
+│   ├── Dockerfile           # Imagen Docker para servir el cliente
 │   └── .dockerignore
 │
-├── docker-compose.yml       # Configuración Docker (nginx puerto 8080)
+├── docker-compose.yml       # Levanta el servicio estático (expuesto en el host en 8080)
+├── arquitectura.md          # Documento de arquitectura creado (resumen técnico)
 ├── README.md                # Este archivo
-└── CLIENTE_CONEXION.md      # Instrucciones de conexión
+└── CLIENTE_CONEXION.md      # (Opcional) instrucciones de conexión y diagnóstico
 ```
 
 ---
 
-## ⚡ Inicio Rápido
+## ⚡ Inicio Rápido (Docker)
 
-### Paso 1: Obtén la IP del servidor de tu compañero
-
-Tu compañero ejecuta esto en su máquina:
-```powershell
-ipconfig
-# Busca IPv4 Address → ejemplo: 192.168.1.100
-```
-
-### Paso 2: Levanta el cliente
+1. Abre una terminal en la carpeta del proyecto:
 
 ```powershell
 cd C:\Users\Lenovo\Desktop\webSocket
+```
+
+2. Levanta el cliente con Docker Compose:
+
+```powershell
 docker compose up -d
 ```
 
-### Paso 3: Abre el dashboard
+3. Abre el dashboard en el navegador:
 
-En el navegador, con la IP de tu compañero:
 ```
-http://localhost:8080/?server=IP_DEL_COMPAÑERO:9000
-```
-
-**Ejemplo:**
-```
-http://localhost:8080/?server=192.168.1.100:9000
+http://localhost:8080
 ```
 
-### Paso 4: ¡Listo!
-
-- El indicador debe estar **🟢 verde** (conectado)
-- Las alertas que envíe tu compañero aparecerán en tiempo real
+Nota: El cliente intentará conectarse automáticamente al servidor WebSocket en `ws://172.23.144.1:9000`.
 
 ---
 
-## 🔧 Comandos Docker
+## 🔧 Comandos Docker útiles
 
 ```powershell
-# Levantar cliente
+# Levantar cliente (detached)
 docker compose up -d
 
-# Ver logs
-docker compose logs -f client
+# Ver logs del servicio (si el servicio se llama `client` en el compose)
+docker compose logs -f
 
-# Detener
+# Detener y eliminar contenedores
 docker compose down
 
-# Reconstruir
+# Reconstruir la imagen y levantar
 docker compose up -d --build
 ```
 
 ---
 
-## 🌐 Cambiar Servidor
+## 🌐 Conexión y configuración
 
-Simplemente cambia la URL:
+- Conexión por defecto: `ws://172.23.144.1:9000` (fija).
+- Archivo con la lógica: `client/app.js`. Si deseas volver a permitir selección dinámica (query param o variable de entorno), edita `client/app.js` y cambia la constante que establece la URL del WebSocket.
 
-| Caso | URL |
-|------|-----|
-| Servidor local (mismo PC) | `http://localhost:8080/?server=localhost:9000` |
-| Servidor en otra máquina | `http://localhost:8080/?server=192.168.1.50:9000` |
-| Usar hostname | `http://localhost:8080/?server=mon-server:9000` |
+Ejemplo: abrir `client/app.js` y buscar la línea donde se construye `new WebSocket(...)`.
 
 ---
 
 ## 💡 Cómo Funciona
 
-1. **Cliente (tú)**: Ejecutas este dashboard en Docker
-2. **Servidor (tu compañero)**: Corre en otra máquina/contenedor Docker
-3. **Conexión**: El cliente se conecta al servidor WebSocket via `?server=IP:PUERTO`
-4. **Alertas**: El servidor envía alertas → Cliente las recibe y muestra en tiempo real
+1. El navegador carga `index.html` servido por el contenedor Docker.
+2. El script `client/app.js` inicializa una conexión WebSocket a `ws://172.23.144.1:9000`.
+3. El servidor WebSocket (externo) envía mensajes/alertas.
+4. El cliente procesa y muestra las alertas en el dashboard en tiempo real.
 
 ---
 
-## ❌ Solucionar Problemas
+## ❌ Solucionar Problemas (con pasos prácticos)
 
-**No conecta (🔴 rojo):**
-- Verifica la IP: `ping 192.168.1.100`
-- Verifica que el puerto 9000 está abierto
-- Verifica que tu compañero tiene el servidor corriendo
+Si el cliente no se conecta al servidor WebSocket (indicador rojo):
 
-**No ves alertas:**
-- Abre DevTools (F12 → Console)
-- Verifica que está conectado (verde)
-- Pide a tu compañero que envíe una alerta de prueba
+- Verifica que el servidor esté activo y escuchando en la IP/puerto indicado.
+	- En la máquina del servidor: `netstat -an | findstr 9000` (Windows) o `ss -ltnp | grep 9000` (Linux).
+- Comprueba conectividad básica desde tu máquina cliente:
+	```powershell
+	ping 172.23.144.1
+	```
+- Prueba la conexión WebSocket con `wscat` desde tu máquina cliente:
+	```powershell
+	npm install -g wscat
+	wscat -c ws://172.23.144.1:9000
+	```
+- Revisa reglas de firewall en ambas máquinas (cliente y servidor) y asegúrate de que el puerto `9000` está permitido.
+- Abre las DevTools del navegador (F12) → pestaña `Console` y `Network` para ver errores de conexión o excepciones.
 
-**Errores en consola:**
-- F12 → Console → revisa los mensajes rojos
-- Copia el error y verifica la IP/puerto en la URL
-
----
-
-## 📖 Documentación
-
-- **`CLIENTE_CONEXION.md`** — Guía detallada de conexión
-- **`docker-compose.yml`** — Configuración Docker
+Si ves errores CORS o problemas de política de seguridad, revisa cómo se sirve el cliente y considera habilitar la configuración adecuada en el servidor WebSocket o en el proxy que lo expone.
 
 ---
 
-**¿Necesitas ayuda?** Revisa `CLIENTE_CONEXION.md` para guía paso a paso.
+## 📄 Documentos relacionados
+
+- `arquitectura.md` — Documento que resume la arquitectura del cliente y consideraciones de red.
+- `client/app.js` — Lógica de conexión WebSocket (editar aquí para cambiar IP/puerto o reintroducir la opción `?server=`).
+
+---
+
+## Próximos pasos sugeridos
+
+- Si quieres permitir seleccionar dinámicamente la IP/puerto desde la URL o por variable de entorno, puedo:
+	- Modificar `client/app.js` para leer `?server=` en la URL o usar `process.env` durante la construcción de la imagen.
+	- Añadir documentación y ejemplos de uso.
+
+---
+
+Si deseas que actualice `client/app.js` para volver a soportar `?server=IP:PUERTO` o usar una variable de entorno, dime y lo hago.
+
