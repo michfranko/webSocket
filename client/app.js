@@ -4,13 +4,12 @@
  */
 
 class AlertClient {
-    constructor(wsUrl = 'ws://10.139.99.40:9000') {
+    constructor(wsUrl = 'ws://192.168.0.106:9000') {
         this.wsUrl = wsUrl;
         this.ws = null;
         this.clientId = null;
         this.alerts = [];
         this.maxAlerts = 500;
-        this.autoScroll = true;
         this.filterLevel = '';
         this.pingInterval = null;
 
@@ -46,7 +45,6 @@ class AlertClient {
             countNormal: document.getElementById('count-normal'),
             countTotal: document.getElementById('count-total'),
             btnClear: document.getElementById('btn-clear'),
-            btnAutoScroll: document.getElementById('btn-auto-scroll'),
             filterSelect: document.getElementById('filter-level'),
             currentTime: document.getElementById('current-time'),
             alertsContainer: document.getElementById('alerts-list-container')
@@ -58,7 +56,6 @@ class AlertClient {
      */
     setupEventListeners() {
         this.dom.btnClear.addEventListener('click', () => this.clearAlerts());
-        this.dom.btnAutoScroll.addEventListener('click', () => this.toggleAutoScroll());
         this.dom.filterSelect.addEventListener('change', (e) => {
             this.filterLevel = e.target.value;
             this.renderAlerts();
@@ -95,20 +92,32 @@ class AlertClient {
             const message = JSON.parse(event.data);
             console.log('[📨 MENSAJE RECIBIDO]', message);
 
-            switch (message.tipo) {
-                case 'conexion':
-                    this.clientId = message.clientId;
+            // Un mensaje puede contener múltiples tipos de información.
+            // Se procesan en orden de importancia.
+
+            // 1. Actualizar ID del cliente si está presente.
+            if (message.clientId) {
+                this.clientId = message.clientId;
+                if (message.totalClients && message.totalClients > 1) {
+                    this.dom.clientIdText.textContent = `Operador ${this.clientId} de ${message.totalClients}`;
+                } else {
                     this.dom.clientIdText.textContent = `ID: ${this.clientId}`;
-                    break;
-                case 'alerta':
-                    this.addAlert(message);
-                    break;
-                case 'estado-servidor':
-                    // Handle server status updates if needed
-                    break;
-                case 'pong':
-                    // Connection is alive
-                    break;
+                }
+            }
+
+            // 2. Procesar datos de alerta si están presentes.
+            if (message.alerta) {
+                this.addAlert(message);
+            }
+
+            // 3. Ignorar pings de mantenimiento.
+            if (message.tipo === 'pong') {
+                return;
+            }
+
+            // 4. Advertir sobre mensajes que no son ni de ID ni de alerta.
+            if (!message.clientId && !message.alerta && message.tipo !== 'pong') {
+                 console.warn('[⚠️ MENSAJE DESCONOCIDO]', message);
             }
         } catch (error) {
             console.error('[❌ ERROR] Fallo al procesar mensaje:', error);
@@ -178,10 +187,6 @@ class AlertClient {
 
         this.updateStats();
         this.renderAlerts();
-
-        if (this.autoScroll) {
-            this.scrollToTop();
-        }
 
         this.dom.lastUpdate.textContent = `Última act: ${this.formatTime(new Date())}`;
         
@@ -285,16 +290,6 @@ class AlertClient {
             this.renderAlerts();
             console.log('[🗑️ LIMPIEZA] Alertas eliminadas.');
         }
-    }
-
-    toggleAutoScroll() {
-        this.autoScroll = !this.autoScroll;
-        this.dom.btnAutoScroll.classList.toggle('active', this.autoScroll);
-        console.log(`[📌 AUTO-SCROLL] ${this.autoScroll ? 'Habilitado' : 'Deshabilitado'}`);
-    }
-
-    scrollToTop() {
-        this.dom.alertsContainer.scrollTop = 0;
     }
 
     playAlertSound() {
