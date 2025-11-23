@@ -87,12 +87,3 @@ server {
         try_files $uri $uri/ =404;
     }
 }
-```
-
-## Guía de Contribución
-
-Las contribuciones deben seguir estas buenas prácticas:
--   Escribir código limpio, modular y bien documentado.
--   Asegurarse de que cualquier nueva funcionalidad esté cubierta por comentarios que expliquen su propósito y comportamiento.
--   Actualizar este `README.md` si se realizan cambios en la arquitectura, configuración o ejecución.
--   Enviar los cambios a través de pull requests para su revisión.
